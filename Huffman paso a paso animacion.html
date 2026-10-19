@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Huffman paso a paso</title>
+<style>
+:root{--bg:#f7f7f4;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--bd:#dcdcd4;--ac:#2563eb;--a2:#e0e9ff;--hl:#d97706;--h2:#fff0cf;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141413;--cd:#1f1f1d;--tx:#ecece6;--mu:#a3a39b;--bd:#3a3a36;--ac:#7aa7ff;--a2:#1d2a4a;--hl:#fbbf24;--h2:#4a3a10;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141413;--cd:#1f1f1d;--tx:#ecece6;--mu:#a3a39b;--bd:#3a3a36;--ac:#7aa7ff;--a2:#1d2a4a;--hl:#fbbf24;--h2:#4a3a10;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:0 0 2px}.mu{fill:var(--mu);color:var(--mu);font-size:11px}
+.g{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:12px}@media(max-width:800px){.g{grid-template-columns:1fr}}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;min-width:0}
+.c h2{font-size:13px;margin:0 0 6px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input{font:inherit;color:var(--tx);background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#x{font-size:17px;min-height:52px}#sl{flex:1;min-width:120px;padding:0}
+svg{display:block;margin:0 auto;max-width:100%;height:auto;font:12px system-ui,sans-serif}svg text{fill:var(--tx)}svg text.mu{fill:var(--mu);font-size:10px}
+.nd{fill:var(--cd);stroke:var(--tx)}.lf{fill:var(--a2);stroke:var(--ac)}.hl{fill:var(--h2);stroke:var(--hl);stroke-width:2.5}.ed{stroke:var(--mu);stroke-width:1.5}
+.sc{overflow-x:auto}.ar{display:flex;gap:4px;justify-content:center;margin-top:6px}.ar div{width:44px;text-align:center;border:1px solid var(--bd);border-radius:6px;padding:2px 0}
+.ar div.hl{background:var(--h2);border-color:var(--hl)}.ar small{display:block;color:var(--mu);font-size:10px}
+.cl{font:12.5px/1.6 ui-monospace,Consolas,monospace;white-space:pre;padding:0 6px;border-radius:4px;overflow-x:auto}.cl.on{background:var(--h2);outline:1px solid var(--hl)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--bd);padding:3px 6px;text-align:left}
+code{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
+body:not(.adv) .opt{display:none}
+.V g{transition:opacity .6s}
+</style></head><body><main>
+<h1>Codificación de Huffman, paso a paso</h1>
+<div class="mu">Heap (árbol y arreglo con índices) + árbol de Huffman en construcción · Estructuras de Datos 2026-II · Grupo 9</div>
+<div class="c opt" style="margin-top:12px"><div class="bar">
+<select id="ex"></select><input id="tx" maxlength="60" placeholder="Tu propio texto (máx. 8 letras distintas)" style="flex:1;min-width:160px"><button id="us">Usar</button></div>
+<div id="msg" class="mu"></div><div id="nt" style="font-size:13px;margin-top:6px"></div></div>
+<div class="c" style="margin-top:12px"><div class="bar" id="phs"></div>
+<div id="x" style="margin-top:8px"></div>
+<div class="bar"><button id="p0">⏮</button><button id="pv">◀</button><button id="pl">▶ Reproducir</button><button id="nx">▶|</button><button id="p9">⏭</button>
+<input type="range" id="sl" min="0" value="0"><span id="ps" class="mu"></span></div>
+<div class="bar" style="margin-top:6px"><label class="mu opt"><input type="checkbox" id="dt"> Mostrar todos los pasos (cada intercambio del heap y cada bit)</label>
+<select id="sp" class="opt"><option value="2600">Lento</option><option value="1500" selected>Normal</option><option value="900">Rápido</option></select><span id="ct" class="mu"></span></div><div class="bar mu" style="margin-top:6px"><span id="pc"></span><span class="opt" style="margin-left:auto">⏱ Ensayo: <b id="cr">00:00</b> / 10:00 <button id="c1">Iniciar</button><button id="c0">Reiniciar</button></span></div></div>
+<div class="g">
+<div class="c"><h2>Heap · árbol</h2><div class="sc" id="ht"></div><h2 style="margin-top:8px">Heap · arreglo (índices)</h2><div class="ar" id="ha"></div></div>
+<div class="c"><h2>Árbol de Huffman en construcción</h2><div class="sc" id="fo"></div><div class="mu">Izquierda = 0 · derecha = 1 · en amarillo: lo que está “en la mano” fuera del heap</div></div>
+<div class="c"><h2>Código Java (núcleo)</h2><div id="cd"></div></div>
+<div class="c"><h2>Frecuencias y resultado</h2><div id="fr"></div><div id="tb"></div></div>
+</div>
+<div class="c" style="margin-top:12px"><h2>Complejidad</h2><div class="mu" style="font-size:13px">Con k letras distintas hay <b>k − 1 rondas</b>; cada una hace 2 sacarMenor + 1 meter, y cada operación recorre como mucho log k pisos del heap → <b>O(k log k)</b>. Contar el texto cuesta O(n). Espacio: heap ≤ k fichas y árbol de 2k − 1 nodos → <b>O(k)</b>. Los contadores de arriba muestran el trabajo real de este ejemplo.</div>
+<table style="margin-top:8px;font-size:13px"><tr><th>Caso</th><th>Cuándo</th><th>Tiempo</th><th>Espacio</th></tr><tr><td>Mejor</td><td>k = 1 o 2 (casi no hay rondas)</td><td>O(n)</td><td>O(k)</td></tr><tr><td>Promedio</td><td>Texto normal: k mucho menor que n</td><td>≈ O(n)</td><td>O(k)</td></tr><tr><td>Peor</td><td>k = n (todas las letras distintas)</td><td>O(n log n)</td><td>O(k) = O(n)</td></tr></table>
+<div class="mu" style="font-size:13px;margin-top:6px">Siempre son k − 1 rondas, sin importar las frecuencias: eso solo cambia la <i>forma</i> del árbol (en escalera, profundidad k − 1). Con alfabeto fijo (256 símbolos) k log k es constante y todo queda en O(n).</div></div>
+<p class="mu">Animación hecha con ayuda de Claude (Anthropic).</p>
+</main>
+<script>
+const $=i=>document.getElementById(i),L=c=>c===" "?"␣":c;
+const EX={"ABRACADABRA":"ABRACADABRA","5 frecuencias: A30 B20 C15 D25 E10":"A".repeat(30)+"B".repeat(20)+"C".repeat(15)+"D".repeat(25)+"E".repeat(10),"HELLO WORLD!!":"HELLO WORLD!!","Caso borde: una sola letra (AAAA)":"AAAA","Caso borde: frecuencias iguales (ABCD)":"ABCD","Caso borde: Fibonacci (escalera)":"ABCCDDDEEEEEFFFFFFFF"};
+const CODE=["int[] frec = contar(texto);","for (cada letra distinta)","    meter(new Nodo(letra, frec));","while (tamano > 1) {","    Nodo a = sacarMenor();","    Nodo b = sacarMenor();","    meter(new Nodo(a, b));","}","return sacarMenor();   // la raíz","// meter → sift-up: sube mientras sea < su padre","// sacarMenor → sift-down: baja con su hijo menor","// decodificar: actual = raiz;","actual = (bit == '0') ? actual.izq : actual.der;","if (actual.esHoja()) { escribir(letra); actual = raiz; }"];
+const NOTES={"ABRACADABRA":"Hay empates: B2, R2 y CD2 valen lo mismo. Según cuál salga primero el árbol cambia de forma, pero el total siempre es 23 bits.","5 frecuencias: A30 B20 C15 D25 E10":"Cuatro rondas (k − 1 = 4). Al unir E10 y C15 sale 25, que empata con D25: otro empate que cambia la forma pero no el costo total.","HELLO WORLD!!":"Seis letras empatadas con frecuencia 1 (H, E, ␣, W, R, D): muchos empates. Resultado: 40 bits contra 104 en ASCII.","Caso borde: una sola letra (AAAA)":"El heap tiene una sola ficha, el bucle no se ejecuta y la raíz es la propia hoja. No hay camino, así que se asigna el código “0” a mano: 4 bits en vez de 32.","Caso borde: frecuencias iguales (ABCD)":"Todas valen lo mismo: el árbol queda balanceado y cada letra usa 2 bits, igual que un código fijo hecho a la medida. Frente a ASCII ahorra, pero Huffman no aporta nada extra.","Caso borde: Fibonacci (escalera)":"El árbol queda en escalera: profundidad k − 1 = 5 y la letra más rara tiene un código de 5 bits. Construirlo cuesta lo mismo (5 rondas); cambia la forma, no el trabajo. Total: 45 bits."};
+const PC={1:"Fase 1: contar O(n) + armar el heap O(k log k) (k veces meter × log k).",2:"Fase 2: k − 1 rondas × (2 sacarMenor + 1 meter) × O(log k) = O(k log k).",3:"Fase 3: generar códigos O(k) (recorre 2k − 1 nodos); codificar O(n).",4:"Fase 4: decodificar cuesta un paso por bit: O(bits). Espacio extra del algoritmo: O(k)."};
+let D,V,cur=0,timer=null,N;
+function build(t){
+ const order=[],fr={};for(const c of t){if(!fr[c]){order.push(c);fr[c]=0}fr[c]++}
+ const k=order.length,n=t.length,S=[];let id=0,heap=[],hand=[],cmp=0,swp=0,rd=0,ph=1;N={};
+ const mk=(ch,f,l,r)=>{const o={id:id++,ch,f,l,r,nm:ch!=null?L(ch):l.nm+r.nm};N[o.id]=o;return o};
+ const lb=o=>o.nm+o.f;
+ const sn=(x,ln,o={})=>S.push({x,ln,hl:o.hl||[],fine:!!o.fine,heap:heap.map(q=>q.id),hand:hand.map(q=>q.id),cmp,swp,rd,ph,codes:o.codes,dec:o.dec});
+ function meter(o,ln){
+  hand=hand.filter(q=>q!==o);heap.push(o);let i=heap.length-1;
+  sn(`Meto ${lb(o)} en la primera casilla libre del arreglo (índice ${i}).`,[...ln,9],{hl:[i]});
+  while(i>0){const p=(i-1)>>1;cmp++;
+   if(heap[i].f<heap[p].f){const m=`${lb(heap[i])} < ${lb(heap[p])}: es menor que su padre (índice ${p}), así que sube y se intercambian.`;[heap[i],heap[p]]=[heap[p],heap[i]];swp++;sn(m,[9],{hl:[p],fine:1});i=p}else break}
+  sn(i?`${lb(heap[i])} no es menor que su padre: se queda en el índice ${i}.`:`${lb(heap[0])} está en la raíz (índice 0): es el menor del heap.`,[9],{hl:[i]});
+ }
+ function sacar(ln,pre){
+  const top=heap[0],last=heap.pop();if(heap.length)heap[0]=last;hand.push(top);
+  sn(`${pre}Saco el menor: ${lb(top)} (la raíz).`+(heap.length?` Para no dejar un hueco, el último (${lb(last)}) pasa a la raíz.`:" El heap queda vacío."),ln,{hl:heap.length?[0]:[]});
+  let i=0;
+  while(heap.length){const l=2*i+1,r=l+1;let m=i;
+   if(l<heap.length&&heap[l].f<heap[m].f)m=l;if(r<heap.length&&heap[r].f<heap[m].f)m=r;cmp+=(l<heap.length)+(r<heap.length);
+   if(m===i){sn(`${lb(heap[i])} ya no tiene hijos menores: queda en el índice ${i}.`,[10],{hl:[i]});break}
+   const s=`${lb(heap[i])} baja: su hijo menor es ${lb(heap[m])} (índice ${m}) y ${heap[m].f} < ${heap[i].f}, así que se intercambian.`;
+   [heap[i],heap[m]]=[heap[m],heap[i]];swp++;sn(s,[10],{hl:[m],fine:1});i=m}
+  return top;
+ }
+ sn(`El texto tiene n = ${n} letras y k = ${k} letras distintas. Cuento cuántas veces aparece cada una (Paso 0).`,[0]);
+ for(const c of order)meter(mk(c,fr[c]),[1,2]);
+ ph=2;
+ while(heap.length>1){rd++;
+  const a=sacar([3,4,10],`Ronda ${rd}: `),b=sacar([5,10],"");
+  const u=mk(null,a.f+b.f,a,b);hand=[u];
+  sn(`Los dos menores son ${lb(a)} y ${lb(b)}. Los uno en un nodo nuevo: ${lb(a)} a la izquierda (0), ${lb(b)} a la derecha (1), frecuencia ${a.f} + ${b.f} = ${u.f}. Se eligen los dos menores porque quedarán más abajo (códigos más largos): es lo que menos duele.`,[6]);
+  meter(u,[6]);
+ }
+ ph=3;const root=heap[0];
+ sn(`Queda una sola ficha: es la raíz, con frecuencia ${root.f}${root.f===n?" (igual al largo del texto ✓)":""}. Ya no hay nada más que unir.`,[8],{hl:[0]});
+ const codes={};(function w(o,p){if(o.ch!=null)codes[o.ch]=p||"0";else{w(o.l,p+"0");w(o.r,p+"1")}})(root,"");
+ sn(`Caminando desde la raíz (izquierda = 0, derecha = 1) sale el código de cada letra. Las más frecuentes quedaron más cerca de la raíz.${k===1?" Caso borde: con una sola letra no hay camino, así que se le asigna “0” a mano.":""}`,[8],{codes});
+ ph=4;const bits=[...t].map(c=>codes[c]).join("");
+ sn(`Codifico: reemplazo cada letra por su código y obtengo ${bits.length} bits (contra ${n*8} en ASCII). Ahora decodifico la secuencia bit a bit usando solo el árbol${n>20?" (en modo resumido salto después de las 20 primeras letras al resultado completo)":""}.`,[11],{codes});
+ let q=root,out="",path=[root.id],lim=0;
+ if(k>1){for(let i=0;i<bits.length;i++){
+  q=bits[i]==="0"?q.l:q.r;path.push(q.id);
+  if(q.ch!=null){out+=q.ch;lim++;sn(`Bit ${i+1} (${bits[i]}): llego a la hoja ${q.nm}. Escribo “${L(q.ch)}” y vuelvo a la raíz.`,[12,13],{codes,fine:lim>20?1:0,dec:{path:path.slice(),out,i}});q=root;path=[root.id]}
+  else sn(`Bit ${i+1} (${bits[i]}): voy a la ${bits[i]==="0"?"izquierda":"derecha"}. Todavía no es una hoja: sigo bajando.`,[12],{codes,fine:1,dec:{path:path.slice(),out,i}})}}
+ else sn("Caso borde: con una sola letra el árbol es solo una hoja; cada bit “0” es esa letra.",[13],{codes,dec:{path:[root.id],out:t,i:bits.length-1}});
+ if(k>1)sn(`Listo: se recorrieron los ${bits.length} bits y se recuperaron las ${n} letras${out===t?", idéntico al texto original ✓":""}.`,[13],{codes,dec:{path:[root.id],out,i:bits.length-1}});
+ return{S,order,fr,codes,n,k,t,root};
+}
+function heapSVG(h,hl){
+ const m=h.length;if(!m)return'<svg viewBox="0 0 200 40"><text x="100" y="24" text-anchor="middle" class="mu">heap vacío</text></svg>';
+ const lv=Math.floor(Math.log2(m))+1,W=Math.max(200,(1<<(lv-1))*52),H=lv*54+8;let e="",nd="";
+ const P=i=>{const l=Math.floor(Math.log2(i+1)),j=i+1-(1<<l);return[(j+.5)/(1<<l)*W,l*54+30]};
+ h.forEach((id,i)=>{const o=N[id],[x,y]=P(i);if(i){const[a,b]=P((i-1)>>1);e+=`<line x1="${a}" y1="${b}" x2="${x}" y2="${y}" class="ed"/>`}
+  nd+=`<circle cx="${x}" cy="${y}" r="19" class="${hl.includes(i)?"hl":o.ch!=null?"lf":"nd"}"/><text x="${x}" y="${y+4}" text-anchor="middle">${o.nm+o.f}</text><text x="${x}" y="${y-23}" text-anchor="middle" class="mu">${i}</text>`});
+ return`<svg width="${W}" viewBox="0 0 ${W} ${H}">${e}${nd}</svg>`;
+}
+function forSVG(ids,hand){
+ const pos={},c={x:0};let md=0;
+ const lay=(o,d)=>{md=Math.max(md,d);if(o.l){lay(o.l,d+1);lay(o.r,d+1);pos[o.id]=[(pos[o.l.id][0]+pos[o.r.id][0])/2,d]}else pos[o.id]=[c.x++,d]};
+ ids.forEach(i=>{lay(N[i],0);c.x+=.5});
+ const X=v=>v*42+26,Y=v=>v*56+22;let e="",nd="";
+ const dr=o=>{const[x,y]=pos[o.id];
+  if(o.l)[[o.l,"0"],[o.r,"1"]].forEach(([q,b])=>{const[qx,qy]=pos[q.id];e+=`<line x1="${X(x)}" y1="${Y(y)}" x2="${X(qx)}" y2="${Y(qy)}" class="ed"/><text x="${(X(x)+X(qx))/2+(b==="0"?-8:8)}" y="${(Y(y)+Y(qy))/2+4}" text-anchor="middle" class="mu">${b}</text>`;dr(q)});
+  nd+=`<circle cx="${X(x)}" cy="${Y(y)}" r="16" class="${hand.includes(o.id)?"hl":o.ch!=null?"lf":"nd"}"/><text x="${X(x)}" y="${Y(y)+4}" text-anchor="middle">${o.f}</text>`+(o.ch!=null?`<text x="${X(x)}" y="${Y(y)+31}" text-anchor="middle" class="mu">${o.nm}</text>`:"")};
+ ids.forEach(i=>dr(N[i]));
+ const W=Math.max(c.x*42+10,120),H=(md+1)*56+18;
+ return`<svg width="${W}" viewBox="0 0 ${W} ${H}">${e}${nd}</svg>`;
+}
+const NS="http://www.w3.org/2000/svg";let HS,FS,HW;
+const sv=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+function Scene(el,W,H){el.innerHTML="";const s=sv("svg",{width:W,viewBox:`0 0 ${W} ${H}`},el);this.E=sv("g",{},s);this.V=sv("g",{},s);this.n={};this.e={};this.raf=0}
+Scene.prototype.up=function(items){
+ const S=this,it={};items.forEach(o=>it[o.id]=o);
+ const rm=id=>{const e=S.e[id];if(e){e.l.remove();if(e.t)e.t.remove();delete S.e[id]}};
+ for(const id in S.n)if(!it[id]){S.n[id].g.remove();delete S.n[id];rm(id)}
+ items.forEach(o=>{let n=S.n[o.id];
+  if(!n){const g=sv("g",{transform:`translate(${o.x},${o.y})`},S.V);g.style.opacity=0;setTimeout(()=>g.style.opacity=1,20);
+   n=S.n[o.id]={g,c:sv("circle",{r:o.r},g),t:sv("text",{"text-anchor":"middle",y:4},g),s:sv("text",{"text-anchor":"middle",class:"mu"},g),x:o.x,y:o.y}}
+  n.c.setAttribute("class",o.cls);n.t.textContent=o.txt;n.s.textContent=o.sub||"";n.s.setAttribute("y",o.sy);n.tx=o.x;n.ty=o.y;n.p=o.p;
+  if(o.p==null)rm(o.id);
+  else{if(!S.e[o.id])S.e[o.id]={l:sv("line",{class:"ed"},S.E),t:o.lab?sv("text",{"text-anchor":"middle",class:"mu"},S.E):null};
+   const e=S.e[o.id];if(e.t){e.t.textContent=o.lab;e.d=o.side}}});
+ const f0={};for(const id in S.n)f0[id]=[S.n[id].x,S.n[id].y];
+ const t0=performance.now();cancelAnimationFrame(S.raf);
+ const fr=now=>{let k=Math.min(1,(now-t0)/750);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+  for(const id in S.n){const n=S.n[id];n.x=f0[id][0]+(n.tx-f0[id][0])*k;n.y=f0[id][1]+(n.ty-f0[id][1])*k;n.g.setAttribute("transform",`translate(${n.x},${n.y})`)}
+  for(const id in S.e){const e=S.e[id],c=S.n[id],p=S.n[c.p];if(!p)continue;
+   e.l.setAttribute("x1",p.x);e.l.setAttribute("y1",p.y);e.l.setAttribute("x2",c.x);e.l.setAttribute("y2",c.y);
+   if(e.t){e.t.setAttribute("x",(p.x+c.x)/2+e.d);e.t.setAttribute("y",(p.y+c.y)/2+4)}}
+  if(k<1)S.raf=requestAnimationFrame(fr)};
+ fr(t0);S.raf=requestAnimationFrame(fr)};
+function heapItems(s){return s.heap.map((id,i)=>{const o=N[id],l=Math.floor(Math.log2(i+1)),j=i+1-(1<<l);
+ return{id,x:(j+.5)/(1<<l)*HW,y:l*54+30,r:19,cls:s.hl.includes(i)?"hl":o.ch!=null?"lf":"nd",txt:o.nm+o.f,sub:String(i),sy:-23,p:i?s.heap[(i-1)>>1]:null}})}
+function forItems(s){
+ const ids=[...s.heap,...s.hand],hot=[...s.hand,...(s.dec?s.dec.path:[])],pos={},c={x:0},out=[];
+ const lay=o=>{if(o.l){lay(o.l);lay(o.r);pos[o.id]=[(pos[o.l.id][0]+pos[o.r.id][0])/2,0]}else pos[o.id]=[c.x++,0]};
+ const dp=(o,d)=>{pos[o.id][1]=d;if(o.l){dp(o.l,d+1);dp(o.r,d+1)}};
+ ids.forEach(i=>{lay(N[i]);dp(N[i],0);c.x+=.5});
+ const add=(o,p,b)=>{const[x,y]=pos[o.id];out.push({id:o.id,x:x*42+26,y:y*56+22,r:16,cls:hot.includes(o.id)?"hl":o.ch!=null?"lf":"nd",txt:String(o.f),sub:o.ch!=null?o.nm:"",sy:31,p,lab:b,side:b==="0"?-8:8});if(o.l){add(o.l,o.id,"0");add(o.r,o.id,"1")}};
+ ids.forEach(i=>add(N[i],null,null));return out}
+function scenes(){const lv=Math.floor(Math.log2(D.k))+1;HW=Math.max(200,(1<<(lv-1))*52);HS=new Scene($("ht"),HW,lv*54+8);
+ const dep=o=>o.l?1+Math.max(dep(o.l),dep(o.r)):0;FS=new Scene($("fo"),Math.max(160,D.k*63+30),(dep(D.root)+1)*56+22)}
+function render(){
+ const s=V[cur];$("x").textContent=s.x;
+ HS.up(heapItems(s));
+ let a="";for(let i=0;i<D.k;i++){const o=s.heap[i]!=null?N[s.heap[i]]:null;a+=`<div class="${s.hl.includes(i)&&o?"hl":""}">${o?o.nm+o.f:"·"}<small>${i}</small></div>`}$("ha").innerHTML=a;
+ FS.up(forItems(s));$("pc").textContent=PC[s.ph];
+ $("cd").innerHTML=CODE.map((t,i)=>`<div class="cl ${s.ln.includes(i)?"on":""}">${t.replace(/</g,"&lt;")}</div>`).join("");
+ $("ct").textContent=`Comparaciones: ${s.cmp} · Intercambios: ${s.swp} · Ronda: ${s.rd}/${Math.max(D.k-1,0)} · Heap: ${s.heap.length} ficha(s)`;
+ $("ps").textContent=`${cur+1}/${V.length}`;$("sl").value=cur;
+ [...$("phs").children].forEach((b,i)=>b.classList.toggle("on",s.ph===i+1));
+ let t="";if(s.codes){const rows=D.order.slice().sort((p,q)=>s.codes[p].length-s.codes[q].length||D.fr[q]-D.fr[p]);let tot=0;
+  t="<table><tr><th>Letra</th><th>Frec.</th><th>Código</th><th>Bits</th></tr>"+rows.map(c=>{tot+=D.fr[c]*s.codes[c].length;return`<tr><td>${L(c)}</td><td>${D.fr[c]}</td><td><code>${s.codes[c]}</code></td><td>${D.fr[c]*s.codes[c].length}</td></tr>`}).join("")+"</table>";
+  const fx=D.n*Math.max(1,Math.ceil(Math.log2(D.k)));
+  t+=`<p><b>Huffman: ${tot} bits</b> · longitud fija (${Math.max(1,Math.ceil(Math.log2(D.k)))} bits/letra): ${fx} · ASCII: ${D.n*8}</p><div class="mu">Texto codificado:</div><code>${[...D.t].map(c=>s.codes[c]).join(" ")}</code>`}
+ if(s.dec){const b=[...D.t].map(c=>s.codes[c]).join("");t+=`<div class="mu">Bits (en amarillo, los ya leídos):</div><code><span style="color:var(--hl)">${b.slice(0,s.dec.i+1)}</span>${b.slice(s.dec.i+1)}</code><p>Texto recuperado: <b>${s.dec.out.replace(/ /g,"␣")}</b></p>`}
+ $("tb").innerHTML=t;
+}
+function setV(){const idx=V?V[cur]:null;V=$("dt").checked?D.S:D.S.filter(s=>!s.fine);cur=idx?Math.max(0,V.indexOf(idx)):0;if(cur<0)cur=0;$("sl").max=V.length-1}
+function load(t){stop();D=build(t);const kk=Object.keys(EX).find(q=>EX[q]===t);$("nt").textContent=kk?"Qué observar: "+NOTES[kk]:"";$("fr").innerHTML="<div class='mu'>"+D.order.map(c=>`${L(c)}: ${D.fr[c]}`).join(" · ")+` (n = ${D.n}, k = ${D.k})</div>`;scenes();V=null;setV();cur=0;render()}
+function go(i){cur=Math.min(Math.max(i,0),V.length-1);render()}
+function stop(){clearInterval(timer);timer=null;$("pl").textContent="▶ Reproducir"}
+function play(){if(timer){stop();return}$("pl").textContent="⏸ Pausar";timer=setInterval(()=>{if(cur>=V.length-1)stop();else go(cur+1)},+$("sp").value)}
+Object.keys(EX).forEach(k=>$("ex").add(new Option(k,k)));
+["Fase 1 · Conteo y heap","Fase 2 · Rondas","Fase 3 · Códigos","Fase 4 · Decodificar"].forEach((n,i)=>{const b=document.createElement("button");b.textContent=n;b.onclick=()=>go(V.findIndex(s=>s.ph===i+1));$("phs").appendChild(b)});
+const ob=document.createElement("button");ob.textContent="⚙ Opciones";ob.style.marginLeft="auto";ob.onclick=()=>document.body.classList.toggle("adv");$("phs").appendChild(ob);
+$("ex").onchange=()=>load(EX[$("ex").value]);
+$("us").onclick=()=>{const t=$("tx").value;if(!t)return $("msg").textContent="Texto vacío: no hay letras, ni heap ni árbol; el programa lo detecta y termina.";if(new Set(t).size>8)return $("msg").textContent="Máximo 8 letras distintas para que se vea bien.";$("msg").textContent="";load(t)};
+$("p0").onclick=()=>go(0);$("p9").onclick=()=>go(V.length-1);$("pv").onclick=()=>go(cur-1);$("nx").onclick=()=>go(cur+1);$("pl").onclick=play;
+$("sl").oninput=e=>go(+e.target.value);$("dt").onchange=()=>{stop();setV();render()};
+$("sp").onchange=()=>{if(timer){stop();play()}};
+document.onkeydown=e=>{if(e.target.tagName==="INPUT"&&e.target.type!=="range")return;if(e.key==="ArrowRight")go(cur+1);if(e.key==="ArrowLeft")go(cur-1)};
+let ts=0,ti=null;const fm=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+$("c1").onclick=()=>{if(ti){clearInterval(ti);ti=null;$("c1").textContent="Iniciar"}else{$("c1").textContent="Pausar";ti=setInterval(()=>{ts++;$("cr").textContent=fm(ts);$("cr").style.color=ts>600?"#dc2626":""},1000)}};
+$("c0").onclick=()=>{clearInterval(ti);ti=null;ts=0;$("cr").textContent="00:00";$("cr").style.color="";$("c1").textContent="Iniciar"};
+load(EX["ABRACADABRA"]);
+</script></body></html>
